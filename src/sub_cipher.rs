@@ -49,7 +49,13 @@ impl SubCipher {
 
         plaintext.to_lowercase()
                  .chars()
-                 .for_each(|c| res.push(self.to_ciphertext[c as usize - 'a' as usize]));
+                 .for_each(|c| {
+                      if c.is_ascii_lowercase() {
+                          res.push(self.to_ciphertext[c as usize - 'a' as usize]);
+                      } else {
+                          res.push(c);
+                      }  
+                  });
 
         res
     }
@@ -59,7 +65,13 @@ impl SubCipher {
 
         ciphertext.to_lowercase()
                   .chars()
-                  .for_each(|c| res.push(self.to_plaintext[c as usize - 'a' as usize]));
+                  .for_each(|c| {
+                      if c.is_ascii_lowercase() {
+                          res.push(self.to_plaintext[c as usize - 'a' as usize]);
+                      } else {
+                          res.push(c);
+                      }  
+                  });
 
         res
     }

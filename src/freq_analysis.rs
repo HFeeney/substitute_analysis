@@ -8,7 +8,7 @@ use rayon::iter::ParallelIterator;
  * the alphabet within c_text.
  */
 pub fn count_char_freq(c_text: &String) -> DashMap<char, usize> {
-    let mut ret: DashMap<char, usize> = DashMap::with_capacity(26);
+    let ret: DashMap<char, usize> = DashMap::with_capacity(26);
 
     // Add keys for all letters of the alphabet.
     for c in 'a'..='z' {
@@ -25,8 +25,9 @@ pub fn count_char_freq(c_text: &String) -> DashMap<char, usize> {
    ret 
 }
 
+// TODO: comment
 pub fn count_bigram_freq(c_text: &String) -> DashMap<String, usize> {
-    let mut ret: DashMap<String, usize> = DashMap::with_capacity(26);
+    let ret: DashMap<String, usize> = DashMap::with_capacity(26);
 
     // Add keys for all letters of the alphabet.
     for c1 in 'a'..='z' {
@@ -44,7 +45,8 @@ pub fn count_bigram_freq(c_text: &String) -> DashMap<String, usize> {
      * I can definitely split on whitespace. I can also split on non-alphabetic characters.
      * Then, from what tokens remain, I need every 2 character window within those tokens.
      */
-// https://stackoverflow.com/questions/51257304/creating-a-sliding-window-iterator-of-slices-of-chars-from-a-string
+    // TODO: implement
+    // https://stackoverflow.com/questions/51257304/creating-a-sliding-window-iterator-of-slices-of-chars-from-a-string
 //    c_text.to_lowercase()
 //          .for_each(|x| { 
 //              ret.entry(x).and_modify(|v| *v += 1); 

@@ -15,7 +15,7 @@ pub struct FrequencyData {
 
 
 pub fn load_frequency_data() -> FrequencyData {
-    let filepath = Path::new("../freq_data.txt");
+    let filepath = Path::new("freq_data.txt");
     let file_disp = filepath.display();
 
     let mut file = match File::open(filepath) {
@@ -42,7 +42,7 @@ pub fn load_frequency_data() -> FrequencyData {
             |l| {
                 // Parse the character and frequency, adding it to the map.
                 let c = l.chars().find(|c| c.is_alphabetic()).unwrap();
-                let freq = l.split(&[' ', '('][..]) // Split on ' '  and '%'
+                let freq = l.split(&[' ', '(', ','][..]) // Split on ' '  and '('
                         .nth(3).unwrap() // The fourth item is the frequency
                         .parse::<usize>().unwrap();
                 character_frequencies.insert(c, freq);
@@ -54,7 +54,7 @@ pub fn load_frequency_data() -> FrequencyData {
         .for_each(
             |l| {
                 // Get iterator over the tokens of the line
-                let mut tokens = l.split(&[' ', ')'][..]);
+                let mut tokens = l.split(&[' ', '(', ','][..]);
                 
                 // Store the second token as the bigram, the fourth as the frequency
                 let bigram = tokens.nth(1).unwrap().to_string();

@@ -8,4 +8,6 @@ edition = "2021"
 [dependencies]
 dashmap = { version = "5.5.3", features = ["rayon"] }
 itertools = "0.12.1"
+lingua = "1.6.2"
+rand = "0.8.5"
 rayon = "1.10.0"
