@@ -44,6 +44,30 @@ impl SubCipher {
         }
     }
 
+    pub fn encrypt_to(&self, plaintext: &[char], output: &mut [char]) {
+        plaintext.iter()
+                 .enumerate()
+                 .for_each(|(i, &c)| {
+                      if c.is_ascii_lowercase() {
+                          output[i] = self.to_ciphertext[c as usize - 'a' as usize];
+                      } else {
+                          output[i] = c;
+                      }  
+                  });
+    }
+
+    pub fn decrypt_to(&self, ciphertext: &[char], output: &mut [char]) {
+        ciphertext.iter()
+                  .enumerate()
+                  .for_each(|(i, &c)| {
+                      if c.is_ascii_lowercase() {
+                          output[i] = self.to_plaintext[c as usize - 'a' as usize];
+                      } else {
+                          output[i] = c;
+                      }  
+                  });
+    }
+
     pub fn encrypt(&self, plaintext: &String) -> String {
         let mut res = String::with_capacity(plaintext.capacity());
 
