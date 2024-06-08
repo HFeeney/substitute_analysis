@@ -1,17 +1,17 @@
+use rayon::prelude::*;
 /**
  * This module represents a simple substitution cipher.
  */
-use std::vec::Vec;
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 pub struct SubCipher {
-    to_ciphertext: Vec<char>,
-    to_plaintext: Vec<char>,
+    to_ciphertext: HashMap<char, char>,
+    to_plaintext: HashMap<char, char>,
 }
-
 
 impl SubCipher {
     pub fn new(shifter: &str) -> Self {
+        /* Disabled for speed.
         // Verify that the shifter has no duplicates and is 26 characters long
         // with only alphabetic characters.
         if shifter.len() != 26 {
@@ -24,19 +24,18 @@ impl SubCipher {
         if !charset.eq(&('a'..='z').collect::<HashSet<char>>()) {
             panic!("Shifter must contain only lowercase alphabet characters!");
         }
+        */
 
         // Generate the maps for encoding and decoding.
-        let alphabet = ('a'..='z').collect::<Vec<char>>();
-        let to_ciphertext = shifter.chars().collect::<Vec<char>>();
-        let to_plaintext = alphabet.iter().map(
-                |c| -> char {
-                    alphabet[
-                        to_ciphertext.iter()
-                                     .position(|search_for| search_for == c)
-                                     .unwrap()
-                    ]
-                }
-            ).collect::<Vec<char>>();
+        let mut to_ciphertext = HashMap::new();
+        let mut to_plaintext = HashMap::new();
+        shifter
+            .chars()
+            .zip('a'..='z')
+            .for_each(|(replace, original)| {
+                to_ciphertext.insert(original, replace);
+                to_plaintext.insert(replace, original);
+            });
 
         Self {
             to_ciphertext,
@@ -44,59 +43,39 @@ impl SubCipher {
         }
     }
 
-    pub fn encrypt_to(&self, plaintext: &[char], output: &mut [char]) {
-        plaintext.iter()
-                 .enumerate()
-                 .for_each(|(i, &c)| {
-                      if c.is_ascii_lowercase() {
-                          output[i] = self.to_ciphertext[c as usize - 'a' as usize];
-                      } else {
-                          output[i] = c;
-                      }  
-                  });
+    pub fn encrypt(&self, plaintext: &str) -> String {
+        let mut output = String::with_capacity(plaintext.len());
+
+        plaintext.chars().for_each(|c| {
+            if c.is_ascii_lowercase() {
+                output.push(*self.to_ciphertext.get(&c).unwrap());
+            } else {
+                output.push(c);
+            }
+        });
+        
+        output
     }
 
-    pub fn decrypt_to(&self, ciphertext: &[char], output: &mut [char]) {
-        ciphertext.iter()
-                  .enumerate()
-                  .for_each(|(i, &c)| {
-                      if c.is_ascii_lowercase() {
-                          output[i] = self.to_plaintext[c as usize - 'a' as usize];
-                      } else {
-                          output[i] = c;
-                      }  
-                  });
-    }
+    pub fn decrypt(&self, ciphertext: &str) -> String {
+        let mut output = String::with_capacity(ciphertext.len());
 
-    pub fn encrypt(&self, plaintext: &String) -> String {
-        let mut res = String::with_capacity(plaintext.capacity());
+        ciphertext.chars().for_each(|c| {
+            if c.is_ascii_lowercase() {
+                output.push(*self.to_plaintext.get(&c).unwrap());
+            } else {
+                output.push(c);
+            }
+        });
 
-        plaintext.to_lowercase()
-                 .chars()
-                 .for_each(|c| {
-                      if c.is_ascii_lowercase() {
-                          res.push(self.to_ciphertext[c as usize - 'a' as usize]);
-                      } else {
-                          res.push(c);
-                      }  
-                  });
-
-        res
-    }
-
-    pub fn decrypt(&self, ciphertext: &String) -> String {
-        let mut res = String::with_capacity(ciphertext.capacity());
-
-        ciphertext.to_lowercase()
-                  .chars()
-                  .for_each(|c| {
-                      if c.is_ascii_lowercase() {
-                          res.push(self.to_plaintext[c as usize - 'a' as usize]);
-                      } else {
-                          res.push(c);
-                      }  
-                  });
-
-        res
+        output
     }
 }
+
+// #[cfg(test)]
+// pub mod test {
+//     use super::*;
+// 
+//     #[test]
+//     fn 
+// }

@@ -1,0 +1,1 @@
+refactor encrypt/decrypt to use Vec<char>
