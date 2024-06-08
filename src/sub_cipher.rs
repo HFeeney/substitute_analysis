@@ -5,8 +5,8 @@ use rayon::prelude::*;
 use std::collections::HashMap;
 
 pub struct SubCipher {
-    to_ciphertext: HashMap<char, char>,
-    to_plaintext: HashMap<char, char>,
+    to_cipher_text: HashMap<char, char>,
+    to_plain_text: HashMap<char, char>,
 }
 
 impl SubCipher {
@@ -27,47 +27,51 @@ impl SubCipher {
         */
 
         // Generate the maps for encoding and decoding.
-        let mut to_ciphertext = HashMap::new();
-        let mut to_plaintext = HashMap::new();
+        let mut to_cipher_text = HashMap::new();
+        let mut to_plain_text = HashMap::new();
         shifter
             .chars()
             .zip('a'..='z')
             .for_each(|(replace, original)| {
-                to_ciphertext.insert(original, replace);
-                to_plaintext.insert(replace, original);
+                to_cipher_text.insert(original, replace);
+                to_plain_text.insert(replace, original);
             });
 
         Self {
-            to_ciphertext,
-            to_plaintext,
+            to_cipher_text,
+            to_plain_text,
         }
     }
 
-    pub fn encrypt(&self, plaintext: &str) -> String {
-        let mut output = String::with_capacity(plaintext.len());
+    pub fn encrypt(&self, plain_text: &[char]) -> Vec<char> {
+        let mut output = vec![' '; plain_text.len()];
 
-        plaintext.chars().for_each(|c| {
-            if c.is_ascii_lowercase() {
-                output.push(*self.to_ciphertext.get(&c).unwrap());
-            } else {
-                output.push(c);
-            }
-        });
+        plain_text.iter()
+                 .enumerate()
+                 .for_each(|(idx, c)| {
+                     if c.is_ascii_lowercase() {
+                         output[idx] = *self.to_cipher_text.get(&c).unwrap();
+                     } else {
+                         output[idx] = *c;
+                     }
+                 });
         
         output
     }
 
-    pub fn decrypt(&self, ciphertext: &str) -> String {
-        let mut output = String::with_capacity(ciphertext.len());
+    pub fn decrypt(&self, cipher_text: &[char]) -> Vec<char> {
+        let mut output = vec![' '; cipher_text.len()];
 
-        ciphertext.chars().for_each(|c| {
-            if c.is_ascii_lowercase() {
-                output.push(*self.to_plaintext.get(&c).unwrap());
-            } else {
-                output.push(c);
-            }
-        });
-
+        cipher_text.iter()
+                 .enumerate()
+                 .for_each(|(idx, c)| {
+                     if c.is_ascii_lowercase() {
+                         output[idx] = *self.to_plain_text.get(&c).unwrap();
+                     } else {
+                         output[idx] = *c;
+                     }
+                 });
+        
         output
     }
 }

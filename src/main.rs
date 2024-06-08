@@ -1,3 +1,15 @@
+/* Program that decodes a substitution cipher using frequency analysis.
+To accomplish this:
+- In parallel, count the frequency of all:
+     - characters
+     - bigrams
+     - trigrams
+- Use this data to construct a most likely shifter based on character frequency
+- Use metropolis hastings to evolve the shifter.
+- The scoring function will compare the frequency of bigrams in decrypted text
+ to the expected frequency of those bigrams in normal english text.
+*/
+
 mod freq_analysis;
 mod load_data;
 mod sub_cipher;
@@ -17,18 +29,10 @@ use itertools::Itertools;
 
 use std::process;
 
-/*
-Program that decodes a substitution cipher using frequency analysis.
-To accomplish this:
-- In parallel, count the frequency of all:
-     - characters
-     - bigrams
-     - trigrams
-- Use this data to construct a most likely shifter based on character frequency
-- Use metropolis hastings to evolve the shifter.
-- The scoring function will compare the frequency of bigrams in decrypted text
- to the expected frequency of those bigrams in normal english text.
-*/
+const KEEP_CHANCE: f64 = 0.0;
+const ITERATIONS: usize = 1000;
+const kB: f64 = 0.2; // Controls the influence of bigram difference in scoring
+const kT: f64 = 0.9; // Controls the influence of trigram difference in scoring
 
 /**
  * Score the provided shifter by evaluating how likely it was used to encrypt
@@ -36,26 +40,39 @@ To accomplish this:
  */
 fn score_shifter(
     freq_data: &FrequencyData, 
-    cipher_text: &str,
+    cipher_text: &[char],
     shifter: &str
-) -> usize {
+) -> f64 {
     // Decrypt the ciphertext with the shifter.
     let decrypted = SubCipher::new(shifter).decrypt(&cipher_text);
 
     // Count the frequencies of the bigrams in the decrypted text. Compare
     // these with expected frequencies for the most common bigrams in in normal
     // english text.
-    let mut score = 0;
+    let mut bigram_diff = 0;
     let bigram_frequencies = count_bigram_freq(&decrypted);
     for (bigram, &freq) in freq_data.bigram_frequencies.iter() {
         let measured_freq = match bigram_frequencies.get(bigram) {
             Some(f) => *f,
             None => 0,
         };
-        score += abs_diff(freq, measured_freq);
+        bigram_diff += abs_diff(freq, measured_freq);
+    }
+    
+    // Count the frequencies of the trigrams in the decrypted text. Compare
+    // these with expected frequencies for the most common trigrams in in normal
+    // english text.
+    let mut trigram_diff = 0;
+    let trigram_frequencies = count_trigram_freq(&decrypted);
+    for (trigram, &freq) in freq_data.trigram_frequencies.iter() {
+        let measured_freq = match trigram_frequencies.get(trigram) {
+            Some(f) => *f,
+            None => 0,
+        };
+        trigram_diff += abs_diff(freq, measured_freq);
     }
 
-    score
+    (bigram_diff as f64) * kB + (trigram_diff as f64) * kT
 }
 
 /** Returns the absolute value of the difference between a and b. */
@@ -136,10 +153,11 @@ fn main() {
         .collect::<Vec<String>>()
         .join("\n")
         .to_lowercase()
-        .collect::<String>();
+        .chars()
+        .collect::<Vec<char>>();
 
     // Uncomment to encrypt a text
-    //    println!("{}", sub_cipher::SubCipher::new("zyxwvutsrqponmlkjihgfedcba").encrypt(&cipher_text));
+    println!("{}", sub_cipher::SubCipher::new("zyxwvutsrqponmlkjihgfedcba").encrypt(&cipher_text).iter().collect::<String>());
 
     // Count the character, bigram frequency
     let char_frequencies: DashMap<char, usize> = count_char_freq(&cipher_text);
@@ -159,20 +177,20 @@ fn main() {
     let mut best_shifter = curr_shifter.clone();
     let mut best_score = score_shifter(
         &freq_data,
-        &cipher_text
+        &cipher_text,
         &curr_shifter
     );
     let mut curr_score = best_score;
 
     // Loop for some amount of time
-    for _ in 0..100 {
+    for _ in 0..ITERATIONS {
         let proposed_shifter = create_proposal_shifter(&curr_shifter); 
 
         // Score this new shifter
         let proposed_score = score_shifter(
             &freq_data,
             &cipher_text,
-            &bigram_frequencies
+            &proposed_shifter
         );
         println!("proposed score {}", proposed_score);
 
@@ -184,11 +202,10 @@ fn main() {
 
         // If the score of this shifter is lower than the previous shifter's
         // score, keep the shifter and update its score
-        if proposed_score < curr_score {
+        if proposed_score < curr_score || rand::random::<f64>() < KEEP_CHANCE {
             curr_shifter = proposed_shifter;
             curr_score = proposed_score;
         }
-        // TODO: Otherwise, keep it with some probability
 
         println!("Best score: {}", best_score);
     }
@@ -196,7 +213,8 @@ fn main() {
     // The best shifter so far is the best guess for the actual shifter.
     // Decrypt the ciphertext and output this result to the console.
     let sub_cipher = SubCipher::new(&best_shifter);
-    println!("Best guess decrypted: {}", sub_cipher.decrypt(&cipher_text));
+    println!("Best guess decrypted: {}", 
+        sub_cipher.decrypt(&cipher_text).iter().collect::<String>());
 }
 
 #[cfg(test)]
